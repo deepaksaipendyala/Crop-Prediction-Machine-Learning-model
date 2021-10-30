@@ -5,7 +5,9 @@
 									<blockquote>To tackle this problem, our team has come up with a project that could help people check the soil condition and also gives crop reccomendations depending on the soil parameters like nutrients in the soil, moisture in soil and rainfall. This project is based on a highly trained ML model to keep the the reccomendation as accurate as possible. The solution can be easily implemented and accessed by people. The user have to enter the soil parameters to check his soil compatability and it is absolutely cost effective. </blockquote>
 									<h3>Technical Stack Description</h3>
 									<blockquote>We obtained a dataset from kaggle and then we took lightgbm  classifying machine learning model and trained it using the dataset, later we created a website using HTML, CSS and JavaScript for front end and python flask for the backend, then we hosted our ML model on the website. The user should input the soil parameters and a crop recommendation is immediately given  by our trained ML model. </blockquote>
-                  
+ 
+ 
+ ## [Demonstration is live on Youtube](https://youtu.be/J-JmpoViLe0)
  <h3>Team members:</h3>
 											<ol>
                         <li><a href="https://deepaksai.pythonanywhere.com/">Pendyala Deepak Sai - Team Lead</a></li>
