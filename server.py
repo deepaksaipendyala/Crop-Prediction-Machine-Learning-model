@@ -6,14 +6,10 @@ from pathlib import Path
 from string import Template
 from flask import Flask,render_template,url_for,redirect,request
 import re
-import requests
-from bs4 import BeautifulSoup
 import pickle
 import lightgbm as lgb
 f=open('finalized_model.sav', 'rb')
 
-fields = ['link', 'title', 'votes']
-filename = "data.csv"
 
 hn = []
 
@@ -73,11 +69,11 @@ def email_sender(data):
     with smtplib.SMTP(host='smtp.gmail.com', port=587) as smtp:
         smtp.ehlo()
         smtp.starttls()
-        smtp.login('experimentsdummy@gmail.com', 'P@&&w0rd@1')
+        smtp.login('gmail', 'password')
         smtp.send_message(email)
 
 
-def form_reminder(data,mail):
+def form_reminder(data):
     name = data["name"]
     emailid = data["email"]
     message = data['message']
@@ -91,16 +87,27 @@ def form_reminder(data,mail):
     with smtplib.SMTP(host='smtp.gmail.com', port=587) as smtp:
         smtp.ehlo()
         smtp.starttls()
-        smtp.login('experimentsdummy@gmail.com', 'P@&&w0rd@1')
+        smtp.login('gmail', 'password')
         smtp.send_message(email)
-        return redirect('/thankyou.html')
-    if mail== True:
-        with smtplib.SMTP(host='smtp.gmail.com', port=587) as smtp:
-            smtp.ehlo()
-            smtp.starttls()
-            smtp.login('experimentsdummy@gmail.com', 'P@&&w0rd@1')
-            smtp.send_message(data['email'])
 
+def pred_mail(data):
+    form_reminder(data)
+    if data["name"]=='':
+        return 0
+    name = data["name"]
+    emailid = data["email"]
+    message = data['message']
+    email = EmailMessage()
+    email['from'] = 'Deepak sai pendyala'
+    email['to'] = emailid
+    email['subject'] = 'Your prediction details!'
+    email.set_content(f'Form received:\n sender name: {name}\n sender id: {emailid}\nmessage: {message}')
+
+    with smtplib.SMTP(host='smtp.gmail.com', port=587) as smtp:
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.login('gmail', 'password')
+        smtp.send_message(email)
 
 @app.route('/submit_form',methods=['POST','GET'])
 def Sumbit_form():
@@ -121,8 +128,8 @@ def Sumbit_form():
 
 @app.route('/crop_form',methods=['POST','GET'])
 def crop_form():
-    # if request.method=='POST':
-    #     try:
+    if request.method=='POST':
+        try:
             cdata=request.form.to_dict()
 
             N = float(cdata['n'])
@@ -134,72 +141,15 @@ def crop_form():
             rainfall = float(cdata['r'])
             crop_name =modell(N,P,K,temperature ,humidity,pH,rainfall)
             cdata["message"] = f' N={N}, P={P}, k={K}, temperature={temperature}, humidity={humidity}, ph= {pH}, rainfall= {rainfall} , Crop name : {crop_name}'
-            mail=True
             write_to_csv(cdata)
             write_to_database(cdata)
-            form_reminder(cdata,mail)
+            pred_mail(cdata)
             return render_template('generic.html',crop_name=crop_name,n=float(cdata['n']),p=float(cdata['p']),k=float(cdata['k']),t=float(cdata['t']),h=float(cdata['h']),ph=float(cdata['ph']),r=float(cdata['r']))
-    #     except:
-    #         return 'Didnt save to database,Try again'
-    # else:
-    #     return 'woops,Something went wrong, Try again'
+        except:
+            return 'Didnt save to database,Try again'
+    else:
+        return 'woops,Something went wrong, Try again'
 
-
-
-def news(title,link):
-    t=title
-    l=link
-    print("done")
-    print(t)
-    print(l)
-    return render_template('news.html',t=t,l=l)
-
-def data(hn,fields,filename):
-  lis = create_custom_hn(hn)
-  st = sort_stories_by_votes(lis)
-  # pprint.pprint(st)
-  # print("done")
-  title=[]
-  link=[]
-  for i in st:
-    title.append(i['title'])
-    link.append(i['link'])
-  return news(title,link)
-
-  # print(title,link)
-
-  # with open(filename, 'w') as csvfile:
-  #     # creating a csv dict writer object
-  #     writer = csv.DictWriter(csvfile, fieldnames = fields)
-
-  #     # writing headers (field names)
-  #     writer.writeheader()
-
-  #     # writing data rows
-  #     writer.writerows(st)
-  #     print("data csv updated")
-
-def create_custom_hn(hn):
-    p = 2  #p no of pages
-    for i in range(p):
-        res = requests.get(f'https://news.ycombinator.com/news?p={i+1}')
-        soup = BeautifulSoup(res.text, 'html.parser')
-        links = soup.select('.storylink')
-        subtext = soup.select('.subtext')
-        for idx, item in enumerate(links):
-            title = item.getText()
-            href = item.get('href', None)
-            vote = subtext[idx].select('.score')
-            if len(vote):
-                points = int(vote[0].getText().replace(' points', ''))
-                if points > 99:
-                    hn.append({'title': title, 'link': href, 'votes': points})
-
-    return hn
-
-
-def sort_stories_by_votes(hnlist):
-    return sorted(hnlist, key=lambda k: k['votes'], reverse=True)
 
 
 
